@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebP to JPG Converter</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            background-color: #fafafa;
+        }
+        .drop-zone.dragover {
+            border-color: #2196F3;
+            background-color: #E3F2FD;
+        }
+        .preview {
+            max-width: 100%;
+            margin: 1rem 0;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #f44336;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebP to JPG Converter</h1>
+        <div class="drop-zone" id="dropZone">
+            <p>Drag & drop a WebP image here or click to select</p>
+            <input type="file" id="fileInput" accept=".webp" style="display: none">
+        </div>
+        <div id="preview"></div>
+        <button id="convertBtn" disabled>Convert to JPG</button>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const convertBtn = document.getElementById('convertBtn');
+        const error = document.getElementById('error');
+
+        // Handle drag and drop events
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            error.textContent = '';
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/webp')) {
+                error.textContent = 'Please select a WebP image file.';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.className = 'preview';
+                preview.innerHTML = '';
+                preview.appendChild(img);
+                convertBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        convertBtn.addEventListener('click', () => {
+            const img = preview.querySelector('img');
+            if (!img) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            try {
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'converted-image.jpg';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }, 'image/jpeg', 0.9);
+            } catch (err) {
+                error.textContent = 'Error converting image. Please try again.';
+            }
+        });
+    </script>
+</body>
+</html>
